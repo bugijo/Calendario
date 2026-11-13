@@ -206,6 +206,58 @@ def marcas(c, y, fundo, x0=14, x1=248, escala=1.0, tel=True, divisor=True):
         c.setFillColor(MARROM); c.setFont('Semi', 4.9 * s); c.drawCentredString(lx + lw / 2, y + 2.2 * s, G.VILLA_TEL)
 
 
+NUTRI_TEL = '(16) 99762-0602'
+
+DICAS_M6 = [
+    'Calor forte: água fresca sempre e passeios longe do sol do meio-dia.',
+    'Carnaval tem barulho e fogos: mantenha seu pet seguro e identificado.',
+    'Pulgas e carrapatos: mantenha a prevenção em dia o ano inteiro.',
+    'Check-up anual: prevenir é sempre o melhor jeito de cuidar.',
+    'Vacinas em dia protegem seu pet e toda a sua família.',
+    'Esfriou? Banho com secagem completa e caminha bem quentinha.',
+    'Vai viajar? Leve a carteirinha de vacinação e a comidinha do seu pet.',
+    'Vermífugo em dia: mais saúde para o seu pet e para a sua casa.',
+    'Banho e tosa regulares deixam a pele saudável e os pelos bonitos.',
+    'Alimentação equilibrada é saúde e energia para brincar todo dia.',
+    'Escovação dos dentes previne tártaro, mau hálito e doenças.',
+    'Fogos assustam: proteja seu pet nas festas. Adote, não abandone!',
+]
+
+
+def dica(c, mes, y, x0=16, x1=246):
+    txt = DICAS_M6[mes]
+    fs = G.ajustar(c, txt, 'Ita', 5.0, x1 - x0 - 12)
+    w = pdfmetrics.stringWidth(txt, 'Ita', fs) + 10
+    xc = (x0 + x1) / 2
+    G.pata(c, xc - w / 2 + 2.5, y + 1.6, 4.2, AMARELO, -12)
+    c.setFillColor(ROSA_ESC); c.setFont('Ita', fs); c.drawString(xc - w / 2 + 7, y, txt)
+
+
+def marcas3(c, y, fundo, x0=16, x1=246):
+    """Tres marcas: Fernanda Calixto (esq.), VillaPet (meio), Nutricaozinho (dir.). y = base."""
+    W = x1 - x0; col = W / 3
+    # Fernanda
+    G.selo_fernanda(c, x0 + 9.5, y + 11, 9, fundo=fundo)
+    tx = x0 + 21.5
+    c.setFillColor(ROSA_ESC); c.setFont('Med', 3.7); c.drawString(tx, y + 15.6, 'Clínica Veterinária')
+    c.setFont('Black', 5.6); c.drawString(tx, y + 9.6, 'Fernanda Calixto')
+    c.setFillColor(MARROM); c.setFont('Semi', 4.3); c.drawString(tx, y + 3.8, G.FER_TEL)
+    # divisores
+    c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5)
+    c.line(x0 + col + 2, y + 2, x0 + col + 2, y + 20); c.line(x0 + 2 * col - 2, y + 2, x0 + 2 * col - 2, y + 20)
+    # VillaPet (meio)
+    xm = x0 + W / 2; lw = 44
+    G.imagem_cmyk(c, 'villapet.png', xm - lw / 2, y + 8.0, w=lw, fundo=fundo)
+    c.setFillColor(MARROM); c.setFont('Semi', 4.3); c.drawCentredString(xm, y + 2.4, G.VILLA_TEL)
+    # Nutricaozinho (dir.)
+    r = 9.5; bx = x0 + 2 * col + 3 + r
+    G.imagem_cmyk(c, 'nutricaozinho.png', bx - r, y + 11 - r, 2 * r, 2 * r, fundo=fundo)
+    tx = bx + r + 3
+    c.setFillColor(MARROM); c.setFont('Med', 3.7); c.drawString(tx, y + 15.6, 'Alimentação Natural')
+    c.setFont('Black', 5.6); c.drawString(tx, y + 9.6, 'Nutricãozinho')
+    c.setFont('Semi', 4.3); c.drawString(tx, y + 3.8, NUTRI_TEL)
+
+
 def patinhas_fundo(c, cor, y0=0, y1=PW, dens=1.0, semente=3):
     rng = np.random.default_rng(semente)
     n = int(26 * dens)
@@ -417,10 +469,12 @@ def m6(c, mes):
                pet_bg=AMARELO, pet_txt=MARROM, fonte='Med', fonte_dest='Bold', lua='lado',
                lua_cor=ROSA, tam_max=8.8, tam_rel=.74 if D else .66, pata_pet=False, gap=.6 if D else 1)
     if D:   # rodape mais compacto para compensar a foto maior
-        grade(c, m, 16, 246, 49, 125 - D + 3, est)
-        c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 46.5, 246, 46.5)
-        legenda(c, m, 16, 246, 40.5, tam=4.4)
-        marcas(c, 7.5, BRANCO, x0=16, x1=246, escala=.9)
+        grade(c, m, 16, 246, 51, 125 - D + 3, est)
+        c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 48.5, 246, 48.5)
+        legenda(c, m, 16, 246, 43, tam=4.3)
+        dica(c, mes, 35.6)
+        c.line(16, 32.4, 246, 32.4)
+        marcas3(c, 7.5, BRANCO)
     else:
         grade(c, m, 16, 246, 60, 125, est)
         c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 57, 246, 57)
