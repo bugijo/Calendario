@@ -32,7 +32,7 @@ ROSA      = CMYKColor(0.10, 0.82, 0.15, 0.00)   # rosa Fernanda Calixto
 ROSA_ESC  = CMYKColor(0.35, 0.95, 0.25, 0.20)   # vinho/magenta escuro
 ROSA_MED  = CMYKColor(0.02, 0.45, 0.08, 0.00)
 ROSA_CLA  = CMYKColor(0.00, 0.18, 0.06, 0.00)
-ROSA_BG   = CMYKColor(0.00, 0.07, 0.02, 0.00)
+ROSA_BG   = CMYKColor(0.00, 18/255, 5/255, 0.00)
 AMARELO   = CMYKColor(0.00, 0.30, 0.95, 0.00)   # amarelo VillaPet
 MARROM    = CMYKColor(0.45, 0.55, 0.60, 0.45)   # marrom VillaPet
 BRANCO    = CMYKColor(0, 0, 0, 0)
@@ -139,7 +139,48 @@ def cartao_fernanda(c, x, y, w, raio=8):
     return h
 
 
-def selo_fernanda(c, cx, cy, r):
+def _rgb2cmyk(a):
+    import numpy as np
+    rgb = a[..., :3] / 255.0
+    k = 1 - rgb.max(-1)
+    d = np.maximum(1 - k, 1e-6)
+    cmy = (1 - rgb - k[..., None]) / d[..., None]
+    return np.dstack([cmy, k])
+
+
+_CACHE = {}
+def imagem_cmyk(c, nome, x, y, w=None, h=None, fundo=None, disco_branco=None):
+    """Imagem achatada (sem transparencia) em CMYK sobre a cor de fundo exata -> compativel PDF/X-1a."""
+    import numpy as np
+    from PIL import Image
+    chave = (nome, str(fundo), disco_branco)
+    if chave not in _CACHE:
+        im = Image.open(os.path.join(ASSETS, nome)).convert('RGBA')
+        a = np.asarray(im).astype(float)
+        al = a[..., 3:4] / 255.0
+        cmyk = _rgb2cmyk(a)
+        f = np.array([fundo.cyan, fundo.magenta, fundo.yellow, fundo.black]) if fundo else np.zeros(4)
+        bg = np.broadcast_to(f, cmyk.shape).copy()
+        if disco_branco:
+            H, W = al.shape[:2]; yy, xx = np.mgrid[0:H, 0:W]
+            R = W / 2 * disco_branco
+            bg[((xx - W/2 + .5)**2 + (yy - H/2 + .5)**2) <= R*R] = 0
+        out = cmyk * al + bg * (1 - al)
+        _CACHE[chave] = Image.fromarray((out * 255).round().astype('uint8'), 'CMYK')
+    img = _CACHE[chave]
+    iw, ih = img.size
+    if w is None: w = h * iw / ih
+    if h is None: h = w * ih / iw
+    c.drawImage(ImageReader(img), x, y, w, h)
+    return w, h
+
+
+def selo_fernanda(c, cx, cy, r, fundo=None):
+    if fundo is not None:
+        c.setFillColor(BRANCO); c.circle(cx, cy, r + 1.2, stroke=0, fill=1)
+        imagem_cmyk(c, 'fernanda_pata.png', cx - r, cy - r, 2*r, 2*r, fundo=fundo, disco_branco=(r + 1.2) / r)
+        return
+
     c.setFillColor(BRANCO); c.circle(cx, cy, r + 1.2, stroke=0, fill=1)
     imagem(c, 'fernanda_pata.png', cx - r, cy - r, 2*r, 2*r)
 
@@ -283,14 +324,14 @@ def wire_frente(c, mes):
     pata(c, 22, 51.5, 6, AMARELO)
     c.drawString(29, 49.4, dica)
     # Fernanda
-    selo_fernanda(c, 31, 27, 13)
+    selo_fernanda(c, 31, 27, 13, fundo=ROSA_BG)
     c.setFillColor(ROSA_ESC); c.setFont('Med', 4.6); c.drawString(48, 33.5, 'Clínica Veterinária')
     c.setFont('Black', 7.6); c.drawString(48, 25.6, 'Fernanda Calixto')
     c.setFillColor(MARROM); c.setFont('Semi', 5.2); c.drawString(48, 18.2, FER_TEL)
     # divisor
     c.setStrokeColor(ROSA_CLA); c.setLineWidth(0.7); c.line(134, 15, 134, 39)
     # VillaPet
-    imagem(c, 'villapet.png', 153, 20.5, w=72)
+    imagem_cmyk(c, 'villapet.png', 153, 20.5, w=72, fundo=ROSA_BG)
     c.setFillColor(MARROM); c.setFont('Semi', 5.2)
     c.drawCentredString(189, 12.6, VILLA_TEL)
 
@@ -303,7 +344,10 @@ def gerar_wire(gabarito, saida):
         cal = calendario_do_gabarito(gabarito, mes, {1, 2, 3}, WW, WW)
         cx = WW / 2
         tr = Transformation().translate(-cx, -TOPO).scale(ESCALA, ESCALA).translate(cx, TOPO)
-        w.add_page(camadas(bf.getvalue(), cal, bt.getvalue(), tr))
+        pg = camadas(bf.getvalue(), cal, bt.getvalue(), tr)
+        pg.trimbox = RectangleObject([6.063, 6.063, 255.512, 255.512])   # corte final 8,8 x 8,8 cm
+        pg.bleedbox = RectangleObject([0, 0, WW, WW])                    # sangria 2 mm
+        w.add_page(pg)
     w.add_metadata({'/Title': 'Calendário Wire-o 2027 - Fernanda Calixto + VillaPet'})
     w.write(saida)
 
