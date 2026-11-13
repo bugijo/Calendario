@@ -56,9 +56,9 @@ def _cmyk(a):
 _cache = {}
 FOTOS_IA = os.path.join(G.ASSETS, 'fotos_ia')
 # fotos geradas por IA (mesNN.png); foco vertical por mes. O rodape (nome do mes) e cortado.
-FOTO_IA = [('mes01', .5, .66), ('mes02', .5, .64), ('mes03', .5, .66), ('mes04', .5, .66), ('mes05', .5, .65),
-           ('mes06', .5, .66), ('mes07', .5, .64), ('mes08', .5, .62), ('mes09', .5, .68), ('mes10', .5, .67),
-           ('mes11', .5, .58), ('mes12', .5, .58)]
+FOTO_IA = [('mes01', .5, .60), ('mes02', .5, .62), ('mes03', .5, .62), ('mes04', .5, .58), ('mes05', .5, .62),
+           ('mes06', .5, .62), ('mes07', .5, .64), ('mes08', .5, .62), ('mes09', .5, .62), ('mes10', .5, .60),
+           ('mes11', .5, .62), ('mes12', .5, .58)]
 
 ZOOM_IA = None   # proporcao da foto "afastada" no centro; as laterais sao completadas com a propria foto desfocada
 
@@ -514,9 +514,15 @@ def gerar(func, saida):
         pg.trimbox = RectangleObject([B, B, B + T, B + T]); pg.bleedbox = RectangleObject([0, 0, PW, PW])
         w.add_page(pg)
     w.write(saida); os.remove(tmp)
+    if os.environ.get('PDFX'):
+        import pdfx
+        pdfx.finalizar(saida, saida + '.x', 'Calendário 2027 - Fernanda Calixto + VillaPet')
+        os.replace(saida + '.x', saida)
 
 
 if __name__ == '__main__':
+    if os.environ.get('PDFX'):
+        import pdfx; pdfx.ativar()
     out = sys.argv[1]; os.makedirs(out, exist_ok=True)
     so = sys.argv[2:] or [n for n, _ in MODELOS]
     for nome, f in MODELOS:
