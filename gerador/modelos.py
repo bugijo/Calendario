@@ -60,6 +60,28 @@ FOTO_IA = [('mes01', .5, .30), ('mes02', .5, .31), ('mes03', .5, .40), ('mes04',
            ('mes06', .5, .30), ('mes07', .5, .45), ('mes08', .5, .36), ('mes09', .5, .28), ('mes10', .5, .36),
            ('mes11', .5, .32), ('mes12', .5, .40)]
 
+ZOOM_IA = 2.05   # proporcao da foto "afastada" no centro; as laterais sao completadas com a propria foto desfocada
+
+def _afastar(im, fy, alvo, prop):
+    """Mostra mais da cena: foto central com proporcao `prop` e laterais preenchidas com a foto ampliada e desfocada."""
+    from PIL import ImageFilter, ImageDraw
+    iw, ih = im.size
+    ch = min(ih, iw / prop)
+    y0 = min(max(fy * ih - ch / 2, 0), ih - ch)
+    fg = im.crop((0, int(y0), iw, int(y0 + ch)))
+    H = fg.size[1]; W = int(H * alvo)
+    bh = iw / alvo
+    by0 = min(max(fy * ih - bh / 2, 0), ih - bh)
+    bg = im.crop((0, int(by0), iw, int(by0 + bh))).resize((W, H), Image.LANCZOS).filter(ImageFilter.GaussianBlur(H * .05))
+    bg = Image.blend(bg, Image.new('RGB', bg.size, (255, 255, 255)), .12)
+    fw = fg.size[0]; xo = (W - fw) // 2
+    m = Image.new('L', fg.size, 255); d = ImageDraw.Draw(m); f = int(fw * .09)
+    for i in range(f):
+        v = int(255 * (i / f) ** 1.5)
+        d.line([(i, 0), (i, H)], fill=v); d.line([(fw - 1 - i, 0), (fw - 1 - i, H)], fill=v)
+    bg.paste(fg, (xo, 0), m)
+    return bg
+
 def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0, lista=None):
     nome, fx, fy = (lista or FOTO_MES)[mes]
     chave = (nome, round(w / h, 3), clarear)
@@ -75,7 +97,10 @@ def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0, lista=No
         else:
             cw, ch = iw, iw / alvo
         x0 = min(max(fx * iw - cw / 2, 0), iw - cw); y0 = min(max(fy * ih - ch / 2, 0), ih - ch)
-        im = im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
+        if lista is FOTO_IA and ZOOM_IA and alvo > ZOOM_IA:
+            im = _afastar(im, fy, alvo, ZOOM_IA)
+        else:
+            im = im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
         px = int(w / 72 * dpi)
         if im.size[0] < px: im = im.resize((px, int(px / alvo)), Image.LANCZOS)
         a = _cmyk(np.asarray(im).astype(float)) * (1 - clarear)
