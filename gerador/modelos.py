@@ -36,9 +36,9 @@ PW, B, T = V.PW, V.B, V.T
 FOTOS = os.path.join(G.ASSETS, 'fotos')
 
 # foto por mes: (arquivo, foco x, foco y)
-FOTO_MES = [('cbb53da2', .5, .38), ('e4c43097', .5, .38), ('1cdf7866', .5, .45), ('2d6367d0', .5, .38),
-            ('59c47045', .45, .55), ('e58e8c52', .45, .45), ('6d31a835', .5, .5), ('3a2c86a7', .5, .45),
-            ('157e6ada', .58, .38), ('2b3f99ba', .55, .38), ('e30322dc', .5, .45), ('14bb3dc7', .62, .45)]
+FOTO_MES = [('cbb53da2', .5, .38), ('e4c43097', .5, .38), ('1cdf7866', .5, .45), ('2d6367d0', .5, .47),
+            ('59c47045', .45, .55), ('e58e8c52', .45, .45), ('6d31a835', .5, .50), ('3a2c86a7', .5, .45),
+            ('157e6ada', .58, .44), ('2b3f99ba', .55, .38), ('e30322dc', .5, .50), ('14bb3dc7', .62, .44)]
 LEGENDA_FOTO = ['Verão com saúde', 'Carinho todo dia', 'Amor em dobro', 'Juntinhos e cuidados',
                 'Quentinho e protegido', 'Hora de brincar!', 'Férias com seu pet', 'Mês dos pets!',
                 'Cuidado de verdade', 'Banho & tosa', 'Sorria!', 'Boas festas!']
