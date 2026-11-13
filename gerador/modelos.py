@@ -338,6 +338,8 @@ def m5(c, mes):
     V.pagina(c, 2027, mes)
 
 
+AGENDA_M6 = True   # Modelo 6 com a agenda do pet (banho, vacina, consulta)
+
 # =================================================================== MODELO 6 - FOTO + MINIMALISTA
 def m6(c, mes):
     m = mes + 1
@@ -357,8 +359,20 @@ def m6(c, mes):
     G.pata(c, 232, 173.5, 7.5, BRANCO, -10)
     # mes no estilo minimalista
     nome = V.MESES[mes]
-    c.setFillColor(CMYKColor(0, 0.10, 0.03, 0)); c.setFont('Black', 40)
-    c.drawRightString(247, 129, '%02d' % m)
+    if not AGENDA_M6:
+        c.setFillColor(CMYKColor(0, 0.10, 0.03, 0)); c.setFont('Black', 40)
+        c.drawRightString(247, 129, '%02d' % m)
+    else:
+        # agenda do pet minimalista: icone + servico + linha pontilhada para anotar os dias
+        x0 = 126
+        c.setFillColor(CINZA); c.setFont('Bold', 3.9)
+        c.drawString(x0, 157.2, 'A G E N D A   D O   P E T')
+        for i, (tipo, rot, cor) in enumerate([('banho', 'Banho', AMARELO), ('vacina', 'Vacina', ROSA), ('consulta', 'Consulta', ROSA_ESC)]):
+            y = 148.5 - i * 9.6
+            icone(c, tipo, x0 + 3.7, y + 1.6, 3.7, cor)
+            c.setFillColor(ROSA_ESC); c.setFont('Med', 5.6); c.drawString(x0 + 10, y, rot)
+            c.setStrokeColor(CMYKColor(0, 0.30, 0.10, 0.05)); c.setLineWidth(.45); c.setDash(.9, 1.3)
+            c.line(x0 + 36, y - .4, 246, y - .4); c.setDash()
     c.setFillColor(ROSA_ESC); c.setFont('Black', 15); c.drawString(16, 143, nome)
     c.setFillColor(ROSA); c.setFont('Med', 7.5); c.drawString(16.5, 133.5, '2 0 2 7')
     c.setStrokeColor(AMARELO); c.setLineWidth(1.3); c.line(16.5, 129.5, 42, 129.5)
