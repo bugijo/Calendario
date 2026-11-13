@@ -234,7 +234,7 @@ def dica(c, mes, y, x0=16, x1=246):
 
 
 def marcas3(c, y, fundo, x0=16, x1=246):
-    """Tres marcas: Fernanda Calixto (esq.), VillaPet (meio), Nutricaozinho (dir.). y = base."""
+    """Tres marcas: Fernanda Calixto (esq.), Nutricaozinho (meio), VillaPet (dir.). y = base."""
     W = x1 - x0; col = W / 3
     # Fernanda
     G.selo_fernanda(c, x0 + 9.5, y + 11, 9, fundo=fundo)
@@ -245,17 +245,20 @@ def marcas3(c, y, fundo, x0=16, x1=246):
     # divisores
     c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5)
     c.line(x0 + col + 2, y + 2, x0 + col + 2, y + 20); c.line(x0 + 2 * col - 2, y + 2, x0 + 2 * col - 2, y + 20)
-    # VillaPet (meio)
-    xm = x0 + W / 2; lw = 44
-    G.imagem_cmyk(c, 'villapet.png', xm - lw / 2, y + 8.0, w=lw, fundo=fundo)
-    c.setFillColor(MARROM); c.setFont('Semi', 4.3); c.drawCentredString(xm, y + 2.4, G.VILLA_TEL)
-    # Nutricaozinho (dir.)
-    r = 9.5; bx = x0 + 2 * col + 3 + r
+    # Nutricaozinho (meio)
+    r = 9.5; tw = pdfmetrics.stringWidth('Alimentação Natural', 'Med', 3.7)
+    tw = max(tw, pdfmetrics.stringWidth('Nutricãozinho', 'Black', 5.6))
+    bloco = 2 * r + 3 + tw
+    bx = x0 + W / 2 - bloco / 2 + r
     G.imagem_cmyk(c, 'nutricaozinho.png', bx - r, y + 11 - r, 2 * r, 2 * r, fundo=fundo)
     tx = bx + r + 3
     c.setFillColor(MARROM); c.setFont('Med', 3.7); c.drawString(tx, y + 15.6, 'Alimentação Natural')
     c.setFont('Black', 5.6); c.drawString(tx, y + 9.6, 'Nutricãozinho')
     c.setFont('Semi', 4.3); c.drawString(tx, y + 3.8, NUTRI_TEL)
+    # VillaPet (dir.)
+    xm = x0 + 2.5 * col; lw = 44
+    G.imagem_cmyk(c, 'villapet.png', xm - lw / 2, y + 8.0, w=lw, fundo=fundo)
+    c.setFillColor(MARROM); c.setFont('Semi', 4.3); c.drawCentredString(xm, y + 2.4, G.VILLA_TEL)
 
 
 def patinhas_fundo(c, cor, y0=0, y1=PW, dens=1.0, semente=3):
