@@ -54,9 +54,9 @@ def _cmyk(a):
     return np.dstack([c, k])
 
 _cache = {}
-def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300):
+def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0):
     nome, fx, fy = FOTO_MES[mes]
-    chave = (nome, round(w / h, 3))
+    chave = (nome, round(w / h, 3), clarear)
     if chave not in _cache:
         im = Image.open(os.path.join(FOTOS, nome + '.jpg')).convert('RGB')
         iw, ih = im.size; alvo = w / h
@@ -68,7 +68,7 @@ def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300):
         im = im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
         px = int(w / 72 * dpi)
         if im.size[0] < px: im = im.resize((px, int(px / alvo)), Image.LANCZOS)
-        a = _cmyk(np.asarray(im).astype(float))
+        a = _cmyk(np.asarray(im).astype(float)) * (1 - clarear)
         _cache[chave] = Image.fromarray((a * 255).round().astype('uint8'), 'CMYK')
     c.saveState()
     p = c.beginPath()
@@ -338,8 +338,113 @@ def m5(c, mes):
     V.pagina(c, 2027, mes)
 
 
+# =================================================================== MODELO 6 - FOTO + MINIMALISTA
+def m6(c, mes):
+    m = mes + 1
+    c.setFillColor(BRANCO); c.rect(0, 0, PW, PW, stroke=0, fill=1)
+    foto(c, mes, 0, 160, PW, V.WIRE - 160)
+    c.setFillColor(ROSA_BG); c.rect(0, V.WIRE, PW, PW - V.WIRE, stroke=0, fill=1)
+    for x, y, a in [(18, 241, -20), (60, 250, 15), (128, 246, 0), (200, 251, -10), (243, 240, 20)]:
+        G.pata(c, x, y, 6, CMYKColor(0, 0.13, 0.04, 0), a)
+    c.setFillColor(ROSA); c.rect(0, V.WIRE - 1.2, PW, 1.2, stroke=0, fill=1)
+    # borda ondulada
+    c.setFillColor(BRANCO)
+    p = c.beginPath(); p.moveTo(0, 152); p.lineTo(0, 170)
+    p.curveTo(80, 156, 160, 180, PW, 164); p.lineTo(PW, 152); p.close(); c.drawPath(p, stroke=0, fill=1)
+    # selo de patinha sobre a foto
+    c.setFillColor(BRANCO); c.circle(232, 174, 9.5, stroke=0, fill=1)
+    c.setFillColor(AMARELO); c.circle(232, 174, 8, stroke=0, fill=1)
+    G.pata(c, 232, 173.5, 7.5, BRANCO, -10)
+    # mes no estilo minimalista
+    nome = V.MESES[mes]
+    c.setFillColor(CMYKColor(0, 0.10, 0.03, 0)); c.setFont('Black', 40)
+    c.drawRightString(247, 129, '%02d' % m)
+    c.setFillColor(ROSA_ESC); c.setFont('Black', 15); c.drawString(16, 143, nome)
+    c.setFillColor(ROSA); c.setFont('Med', 7.5); c.drawString(16.5, 133.5, '2 0 2 7')
+    c.setStrokeColor(AMARELO); c.setLineWidth(1.3); c.line(16.5, 129.5, 42, 129.5)
+    est = dict(sem_pill=False, sem_txt=CINZA, sem_dom_txt=ROSA, sem_tam=4.9, sem_fonte='Bold', sem_h=7.5,
+               celula='circ', cel_bg=None, txt=CMYKColor(0.55, 0.60, 0.60, 0.55), dom_txt=ROSA, fer_bg=ROSA, fer_txt=BRANCO,
+               pet_bg=AMARELO, pet_txt=MARROM, fonte='Med', fonte_dest='Bold', lua='lado',
+               lua_cor=ROSA, tam_max=8.8, tam_rel=.66, pata_pet=False, gap=1)
+    grade(c, m, 16, 246, 60, 125, est)
+    c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 57, 246, 57)
+    legenda(c, m, 16, 246, 50, tam=4.5)
+    marcas(c, 10, BRANCO, x0=16, x1=246)
+
+
+# =================================================================== MODELO 7 - FOTO DE FUNDO + AGENDA DO PET
+def icone(c, tipo, cx, cy, r, cor):
+    c.setFillColor(cor); c.circle(cx, cy, r, stroke=0, fill=1)
+    c.setFillColor(BRANCO); c.setStrokeColor(BRANCO); c.setLineCap(1); c.setLineJoin(1)
+    s = r
+    if tipo == 'banho':      # gota d'agua
+        p = c.beginPath(); p.moveTo(cx, cy + .62 * s)
+        p.curveTo(cx + .15 * s, cy + .3 * s, cx + .45 * s, cy + .05 * s, cx + .45 * s, cy - .18 * s)
+        p.curveTo(cx + .45 * s, cy - .48 * s, cx - .45 * s, cy - .48 * s, cx - .45 * s, cy - .18 * s)
+        p.curveTo(cx - .45 * s, cy + .05 * s, cx - .15 * s, cy + .3 * s, cx, cy + .62 * s); p.close()
+        c.drawPath(p, stroke=0, fill=1)
+        c.setFillColor(cor); c.circle(cx - .16 * s, cy - .16 * s, .09 * s, stroke=0, fill=1)
+    elif tipo == 'vacina':   # seringa
+        c.saveState(); c.translate(cx, cy); c.rotate(-45)
+        c.roundRect(-.18 * s, -.42 * s, .36 * s, .7 * s, .05 * s, stroke=0, fill=1)
+        c.setLineWidth(.07 * s); c.line(0, .28 * s, 0, .5 * s); c.line(-.22 * s, .5 * s, .22 * s, .5 * s)
+        c.setLineWidth(.05 * s); c.line(0, -.42 * s, 0, -.7 * s)
+        c.setStrokeColor(cor); c.setLineWidth(.04 * s)
+        for yy in (-.25, -.1, .05): c.line(-.18 * s, yy * s, -.04 * s, yy * s)
+        c.restoreState()
+    else:                    # consulta: coracao com cruz
+        p = c.beginPath(); p.moveTo(cx, cy - .48 * s)
+        p.curveTo(cx - .7 * s, cy - .02 * s, cx - .42 * s, cy + .6 * s, cx, cy + .25 * s)
+        p.curveTo(cx + .42 * s, cy + .6 * s, cx + .7 * s, cy - .02 * s, cx, cy - .48 * s); p.close()
+        c.drawPath(p, stroke=0, fill=1)
+        c.setFillColor(cor)
+        c.rect(cx - .05 * s, cy - .22 * s, .1 * s, .32 * s, stroke=0, fill=1)
+        c.rect(cx - .16 * s, cy - .11 * s, .32 * s, .1 * s, stroke=0, fill=1)
+
+
+def m7(c, mes):
+    m = mes + 1
+    c.setFillColor(BRANCO); c.rect(0, 0, PW, PW, stroke=0, fill=1)
+    nome = V.MESES[mes]
+    # cabecalho minimalista
+    c.setFillColor(CMYKColor(0, 0.10, 0.03, 0)); c.setFont('Black', 44); c.drawRightString(247, 192, '%02d' % m)
+    c.setFillColor(ROSA_ESC); c.setFont('Black', 15); c.drawString(16, 208, nome)
+    c.setFillColor(ROSA); c.setFont('Med', 7.5); c.drawString(16.5, 198.5, '2 0 2 7')
+    c.setStrokeColor(AMARELO); c.setLineWidth(1.3); c.line(16.5, 194.5, 42, 194.5)
+    # agenda do pet
+    ay0, ay1 = 150, 188
+    c.setFillColor(ROSA_BG); c.roundRect(14, ay0, 234, ay1 - ay0, 7, stroke=0, fill=1)
+    c.setFillColor(ROSA_ESC); c.setFont('Black', 5.2); c.drawString(21, ay1 - 8.5, 'AGENDA DO MEU PET')
+    G.pata(c, 82, ay1 - 6.8, 4, ROSA, -10)
+    c.setFillColor(CINZA); c.setFont('Med', 4.3); c.drawRightString(241, ay1 - 8.3, 'anote os dias aqui')
+    itens = [('banho', 'Banho', AMARELO), ('vacina', 'Vacina', ROSA), ('consulta', 'Consulta', ROSA_ESC)]
+    colw = 234 / 3
+    for i, (tipo, rot, cor) in enumerate(itens):
+        x = 14 + colw * i
+        icone(c, tipo, x + 15, ay0 + 13.5, 7.2, cor)
+        c.setFillColor(MARROM); c.setFont('Black', 6.4); c.drawString(x + 25.5, ay0 + 16, rot)
+        c.setStrokeColor(CMYKColor(0, 0.25, 0.08, 0.05)); c.setLineWidth(.5)
+        c.setDash(1.2, 1.4)
+        c.line(x + 25.5, ay0 + 8.5, x + colw - 6, ay0 + 8.5)
+        c.setDash()
+        c.setFillColor(CINZA); c.setFont('Med', 3.6); c.drawString(x + 25.5, ay0 + 4, 'dia(s)')
+    # foto clarinha de fundo no calendario
+    py0, py1 = 56, 146
+    foto(c, mes, 0, py0, PW, py1 - py0, clarear=0.78)
+    est = dict(sem_pill=True, sem_bg=BRANCO, sem_dom_bg=ROSA, sem_txt=ROSA_ESC, sem_dom_txt=BRANCO,
+               sem_tam=4.9, sem_fonte='Black', sem_h=7.5,
+               celula='circ', cel_bg=None, txt=CMYKColor(0.55, 0.65, 0.60, 0.65), dom_txt=ROSA, fer_bg=ROSA, fer_txt=BRANCO,
+               pet_bg=AMARELO, pet_txt=MARROM, fonte='Bold', fonte_dest='Black', lua='lado',
+               lua_cor=ROSA_ESC, tam_max=8.6, tam_rel=.66, pata_pet=False, gap=1.5)
+    grade(c, m, 16, 246, 59, 143, est)
+    legenda(c, m, 16, 246, 49.5, tam=4.5)
+    c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 45, 246, 45)
+    marcas(c, 9, BRANCO, x0=16, x1=246)
+
+
 MODELOS = [('Modelo1_FotoDoMes', m1), ('Modelo2_LadoALado', m2), ('Modelo3_Polaroid', m3),
-           ('Modelo4_Minimalista', m4), ('Modelo5_Ilustrado', m5)]
+           ('Modelo4_Minimalista', m4), ('Modelo5_Ilustrado', m5),
+           ('Modelo6_FotoMinimalista', m6), ('Modelo7_AgendaDoPet', m7)]
 
 
 def gerar(func, saida):
