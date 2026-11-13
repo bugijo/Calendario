@@ -56,11 +56,11 @@ def _cmyk(a):
 _cache = {}
 FOTOS_IA = os.path.join(G.ASSETS, 'fotos_ia')
 # fotos geradas por IA (mesNN.png); foco vertical por mes. O rodape (nome do mes) e cortado.
-FOTO_IA = [('mes01', .5, .30), ('mes02', .5, .31), ('mes03', .5, .40), ('mes04', .5, .40), ('mes05', .5, .36),
-           ('mes06', .5, .30), ('mes07', .5, .45), ('mes08', .5, .36), ('mes09', .5, .28), ('mes10', .5, .36),
-           ('mes11', .5, .32), ('mes12', .5, .40)]
+FOTO_IA = [('mes01', .5, .66), ('mes02', .5, .64), ('mes03', .5, .66), ('mes04', .5, .66), ('mes05', .5, .65),
+           ('mes06', .5, .66), ('mes07', .5, .64), ('mes08', .5, .62), ('mes09', .5, .68), ('mes10', .5, .67),
+           ('mes11', .5, .58), ('mes12', .5, .58)]
 
-ZOOM_IA = 2.05   # proporcao da foto "afastada" no centro; as laterais sao completadas com a propria foto desfocada
+ZOOM_IA = None   # proporcao da foto "afastada" no centro; as laterais sao completadas com a propria foto desfocada
 
 def _afastar(im, fy, alvo, prop):
     """Mostra mais da cena: foto central com proporcao `prop` e laterais preenchidas com a foto ampliada e desfocada."""
