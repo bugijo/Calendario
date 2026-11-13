@@ -54,11 +54,21 @@ def _cmyk(a):
     return np.dstack([c, k])
 
 _cache = {}
-def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0):
-    nome, fx, fy = FOTO_MES[mes]
+FOTOS_IA = os.path.join(G.ASSETS, 'fotos_ia')
+# fotos geradas por IA (mesNN.png); foco vertical por mes. O rodape (nome do mes) e cortado.
+FOTO_IA = [('mes01', .5, .30), ('mes02', .5, .31), ('mes03', .5, .40), ('mes04', .5, .40), ('mes05', .5, .36),
+           ('mes06', .5, .30), ('mes07', .5, .45), ('mes08', .5, .36), ('mes09', .5, .28), ('mes10', .5, .36),
+           ('mes11', .5, .32), ('mes12', .5, .40)]
+
+def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0, lista=None):
+    nome, fx, fy = (lista or FOTO_MES)[mes]
     chave = (nome, round(w / h, 3), clarear)
     if chave not in _cache:
-        im = Image.open(os.path.join(FOTOS, nome + '.jpg')).convert('RGB')
+        if lista is FOTO_IA:
+            im = Image.open(os.path.join(FOTOS_IA, nome + '.png')).convert('RGB')
+            im = im.crop((0, 0, im.size[0], int(im.size[1] * 0.91)))     # remove o nome do mes no canto
+        else:
+            im = Image.open(os.path.join(FOTOS, nome + '.jpg')).convert('RGB')
         iw, ih = im.size; alvo = w / h
         if iw / ih > alvo:
             cw, ch = ih * alvo, ih
@@ -338,52 +348,59 @@ def m5(c, mes):
     V.pagina(c, 2027, mes)
 
 
-AGENDA_M6 = True   # Modelo 6 com a agenda do pet (banho, vacina, consulta)
+AGENDA_M6 = True
+USAR_FOTOS_IA = True   # Modelo 6 com as fotos geradas por IA (assets/fotos_ia)   # Modelo 6 com a agenda do pet (banho, vacina, consulta)
 
 # =================================================================== MODELO 6 - FOTO + MINIMALISTA
 def m6(c, mes):
     m = mes + 1
+    D = 24 if USAR_FOTOS_IA else 0          # quanto a foto cresce para baixo
     c.setFillColor(BRANCO); c.rect(0, 0, PW, PW, stroke=0, fill=1)
-    foto(c, mes, 0, 160, PW, V.WIRE - 160)
+    foto(c, mes, 0, 160 - D, PW, V.WIRE - 160 + D, lista=FOTO_IA if USAR_FOTOS_IA else None)
     c.setFillColor(ROSA_BG); c.rect(0, V.WIRE, PW, PW - V.WIRE, stroke=0, fill=1)
     for x, y, a in [(18, 241, -20), (60, 250, 15), (128, 246, 0), (200, 251, -10), (243, 240, 20)]:
         G.pata(c, x, y, 6, CMYKColor(0, 0.13, 0.04, 0), a)
     c.setFillColor(ROSA); c.rect(0, V.WIRE - 1.2, PW, 1.2, stroke=0, fill=1)
     # borda ondulada
     c.setFillColor(BRANCO)
-    p = c.beginPath(); p.moveTo(0, 152); p.lineTo(0, 170)
-    p.curveTo(80, 156, 160, 180, PW, 164); p.lineTo(PW, 152); p.close(); c.drawPath(p, stroke=0, fill=1)
+    p = c.beginPath(); p.moveTo(0, 152 - D); p.lineTo(0, 170 - D)
+    p.curveTo(80, 156 - D, 160, 180 - D, PW, 164 - D); p.lineTo(PW, 152 - D); p.close(); c.drawPath(p, stroke=0, fill=1)
     # selo de patinha sobre a foto
-    c.setFillColor(BRANCO); c.circle(232, 174, 9.5, stroke=0, fill=1)
-    c.setFillColor(AMARELO); c.circle(232, 174, 8, stroke=0, fill=1)
-    G.pata(c, 232, 173.5, 7.5, BRANCO, -10)
-    # mes no estilo minimalista
+    c.setFillColor(BRANCO); c.circle(232, 174 - D, 9.5, stroke=0, fill=1)
+    c.setFillColor(AMARELO); c.circle(232, 174 - D, 8, stroke=0, fill=1)
+    G.pata(c, 232, 173.5 - D, 7.5, BRANCO, -10)
     nome = V.MESES[mes]
-    if not AGENDA_M6:
-        c.setFillColor(CMYKColor(0, 0.10, 0.03, 0)); c.setFont('Black', 40)
-        c.drawRightString(247, 129, '%02d' % m)
-    else:
-        # agenda do pet minimalista: icone + servico + linha pontilhada para anotar os dias
+    if AGENDA_M6:
         x0 = 126
         c.setFillColor(CINZA); c.setFont('Bold', 3.9)
-        c.drawString(x0, 157.2, 'A G E N D A   D O   P E T')
+        c.drawString(x0, 157.2 - D, 'A G E N D A   D O   P E T')
+        esp = 8.6 if D else 9.6
         for i, (tipo, rot, cor) in enumerate([('banho', 'Banho', AMARELO), ('vacina', 'Vacina', ROSA), ('consulta', 'Consulta', ROSA_ESC)]):
-            y = 148.5 - i * 9.6
-            icone(c, tipo, x0 + 3.7, y + 1.6, 3.7, cor)
-            c.setFillColor(ROSA_ESC); c.setFont('Med', 5.6); c.drawString(x0 + 10, y, rot)
+            y = 148.5 - D - i * esp
+            icone(c, tipo, x0 + 3.7, y + 1.6, 3.6, cor)
+            c.setFillColor(ROSA_ESC); c.setFont('Med', 5.5); c.drawString(x0 + 10, y, rot)
             c.setStrokeColor(CMYKColor(0, 0.30, 0.10, 0.05)); c.setLineWidth(.45); c.setDash(.9, 1.3)
             c.line(x0 + 36, y - .4, 246, y - .4); c.setDash()
-    c.setFillColor(ROSA_ESC); c.setFont('Black', 15); c.drawString(16, 143, nome)
-    c.setFillColor(ROSA); c.setFont('Med', 7.5); c.drawString(16.5, 133.5, '2 0 2 7')
-    c.setStrokeColor(AMARELO); c.setLineWidth(1.3); c.line(16.5, 129.5, 42, 129.5)
-    est = dict(sem_pill=False, sem_txt=CINZA, sem_dom_txt=ROSA, sem_tam=4.9, sem_fonte='Bold', sem_h=7.5,
+    else:
+        c.setFillColor(CMYKColor(0, 0.10, 0.03, 0)); c.setFont('Black', 40)
+        c.drawRightString(247, 129, '%02d' % m)
+    c.setFillColor(ROSA_ESC); c.setFont('Black', 15); c.drawString(16, 143 - D, nome)
+    c.setFillColor(ROSA); c.setFont('Med', 7.5); c.drawString(16.5, 133.5 - D, '2 0 2 7')
+    c.setStrokeColor(AMARELO); c.setLineWidth(1.3); c.line(16.5, 129.5 - D, 42, 129.5 - D)
+    est = dict(sem_pill=False, sem_txt=CINZA, sem_dom_txt=ROSA, sem_tam=4.9, sem_fonte='Bold', sem_h=7.0 if D else 7.5,
                celula='circ', cel_bg=None, txt=CMYKColor(0.55, 0.60, 0.60, 0.55), dom_txt=ROSA, fer_bg=ROSA, fer_txt=BRANCO,
                pet_bg=AMARELO, pet_txt=MARROM, fonte='Med', fonte_dest='Bold', lua='lado',
-               lua_cor=ROSA, tam_max=8.8, tam_rel=.66, pata_pet=False, gap=1)
-    grade(c, m, 16, 246, 60, 125, est)
-    c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 57, 246, 57)
-    legenda(c, m, 16, 246, 50, tam=4.5)
-    marcas(c, 10, BRANCO, x0=16, x1=246)
+               lua_cor=ROSA, tam_max=8.8, tam_rel=.74 if D else .66, pata_pet=False, gap=.6 if D else 1)
+    if D:   # rodape mais compacto para compensar a foto maior
+        grade(c, m, 16, 246, 49, 125 - D + 3, est)
+        c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 46.5, 246, 46.5)
+        legenda(c, m, 16, 246, 40.5, tam=4.4)
+        marcas(c, 7.5, BRANCO, x0=16, x1=246, escala=.9)
+    else:
+        grade(c, m, 16, 246, 60, 125, est)
+        c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 57, 246, 57)
+        legenda(c, m, 16, 246, 50, tam=4.5)
+        marcas(c, 10, BRANCO, x0=16, x1=246)
 
 
 # =================================================================== MODELO 7 - FOTO DE FUNDO + AGENDA DO PET
