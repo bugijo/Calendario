@@ -86,7 +86,7 @@ def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0, lista=No
     nome, fx, fy = (lista or FOTO_MES)[mes]
     chave = (nome, round(w / h, 3), clarear)
     if chave not in _cache:
-        if lista is FOTO_IA:
+        if nome.startswith('mes'):
             im = Image.open(os.path.join(FOTOS_IA, nome + '.png')).convert('RGB')
             im = im.crop((0, 0, im.size[0], int(im.size[1] * 0.91)))     # remove o nome do mes no canto
         else:
@@ -97,7 +97,7 @@ def foto(c, mes, x, y, w, h, forma='ret', raio=0, dpi=300, clarear=0.0, lista=No
         else:
             cw, ch = iw, iw / alvo
         x0 = min(max(fx * iw - cw / 2, 0), iw - cw); y0 = min(max(fy * ih - ch / 2, 0), ih - ch)
-        if lista is FOTO_IA and ZOOM_IA and alvo > ZOOM_IA:
+        if nome.startswith('mes') and ZOOM_IA and alvo > ZOOM_IA:
             im = _afastar(im, fy, alvo, ZOOM_IA)
         else:
             im = im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
@@ -555,6 +555,87 @@ def m7(c, mes):
     marcas(c, 9, BRANCO, x0=16, x1=246)
 
 
+# =================================================================== CAPA E CONTRACAPA (Modelo 6)
+CAPA_M6 = True
+CREME_BG = CMYKColor(0.0, 0.03, 0.09, 0.02)
+
+
+def _faixa_wire(c):
+    c.setFillColor(ROSA_BG); c.rect(0, V.WIRE, PW, PW - V.WIRE, stroke=0, fill=1)
+    for x, y, a in [(18, 241, -20), (60, 250, 15), (128, 246, 0), (200, 251, -10), (243, 240, 20)]:
+        G.pata(c, x, y, 6, CMYKColor(0, 0.13, 0.04, 0), a)
+    c.setFillColor(ROSA); c.rect(0, V.WIRE - 1.2, PW, 1.2, stroke=0, fill=1)
+
+
+def capa(c):
+    c.setFillColor(BRANCO); c.rect(0, 0, PW, PW, stroke=0, fill=1)
+    y0 = 104
+    foto(c, 0, 0, y0, PW, V.WIRE - y0, lista=[('mes05', .5, .62)])
+    _faixa_wire(c)
+    c.setFillColor(BRANCO)
+    p = c.beginPath(); p.moveTo(0, y0 - 8); p.lineTo(0, y0 + 10)
+    p.curveTo(80, y0 - 4, 160, y0 + 20, PW, y0 + 4); p.lineTo(PW, y0 - 8); p.close(); c.drawPath(p, stroke=0, fill=1)
+    c.setFillColor(BRANCO); c.circle(232, y0 + 14, 9.5, stroke=0, fill=1)
+    c.setFillColor(AMARELO); c.circle(232, y0 + 14, 8, stroke=0, fill=1)
+    G.pata(c, 232, y0 + 13.5, 7.5, BRANCO, -10)
+    # titulo
+    c.setFillColor(ROSA); c.setFont('Bold', 6.2); c.drawString(16.5, 94, 'C A L E N D Á R I O')
+    c.setFillColor(ROSA_ESC); c.setFont('Black', 40); c.drawString(14.5, 60, '2027')
+    c.setStrokeColor(AMARELO); c.setLineWidth(1.6); c.line(16.5, 55, 48, 55)
+    c.setFillColor(ROSA_ESC); c.setFont('Ita', 6.4)
+    c.drawRightString(246, 80, 'Lado a lado,')
+    c.drawRightString(246, 71, 'cuidando de quem')
+    c.drawRightString(246, 62, 'você ama.')
+    G.pata(c, 238, 92, 6, AMARELO, -12)
+    c.setStrokeColor(ROSA_CLA); c.setLineWidth(.5); c.line(16, 41, 246, 41)
+    marcas3(c, 10, BRANCO)
+
+
+def _cartao(c, y, h, fundo):
+    c.setFillColor(fundo); c.roundRect(14, y, 234, h, 8, stroke=0, fill=1)
+
+
+def contracapa(c):
+    c.setFillColor(BRANCO); c.rect(0, 0, PW, PW, stroke=0, fill=1)
+    _faixa_wire(c)
+    c.setFillColor(ROSA_ESC); c.setFont('Black', 12.5); c.drawCentredString(PW / 2, 209, 'Cuidado completo para o seu pet')
+    c.setFillColor(ROSA); c.setFont('Med', 6.2); c.drawCentredString(PW / 2, 199.5, 'tudo no mesmo lugar, lado a lado')
+    h = 52; gap = 6; ys = [140, 140 - h - gap, 140 - 2 * (h + gap)]
+    # Fernanda Calixto
+    y = ys[0]; _cartao(c, y, h, ROSA_BG)
+    G.selo_fernanda(c, 38, y + h / 2, 17, fundo=ROSA_BG)
+    tx = 64
+    c.setFillColor(ROSA_ESC); c.setFont('Med', 5); c.drawString(tx, y + 39, 'Clínica Veterinária')
+    c.setFont('Black', 9.5); c.drawString(tx, y + 29.5, 'Fernanda Calixto')
+    c.setFillColor(MARROM); c.setFont('Semi', 4.8)
+    c.drawString(tx, y + 20.5, 'Consultas (consultório e domicílio) • Vacinas')
+    c.drawString(tx, y + 14, 'Cirurgias • Especialidades • Internação')
+    c.setFillColor(ROSA_ESC); c.setFont('Bold', 5.4); c.drawString(tx, y + 5.5, G.FER_TEL + '   •   @fer_calixto_clinica_vet')
+    # VillaPet
+    y = ys[1]; _cartao(c, y, h, AMARELO_BG)
+    lw = 50; G.imagem_cmyk(c, 'villapet.png', 18, y + h / 2 - lw * 906 / 2627 / 2, w=lw, fundo=AMARELO_BG)
+    tx = 76
+    c.setFillColor(MARROM); c.setFont('Med', 5); c.drawString(tx, y + 39, 'Animal Center')
+    c.setFont('Black', 9.5); c.drawString(tx, y + 29.5, 'VillaPet')
+    c.setFont('Semi', 4.8)
+    c.drawString(tx, y + 20.5, 'Pet Shop • Banho e Tosa • Acessórios')
+    c.drawString(tx, y + 14, 'Rua Expedicionário Solano, 510 • Sertãozinho/SP')
+    c.setFont('Bold', 5.4); c.drawString(tx, y + 5.5, G.VILLA_TEL + '   •   @villapet_')
+    # Nutricaozinho
+    y = ys[2]; _cartao(c, y, h, CREME_BG)
+    G.imagem_cmyk(c, 'nutricaozinho.png', 21, y + h / 2 - 17, 34, 34, fundo=CREME_BG)
+    tx = 64
+    c.setFillColor(MARROM); c.setFont('Med', 5); c.drawString(tx, y + 39, 'Alimentação Natural')
+    c.setFont('Black', 9.5); c.drawString(tx, y + 29.5, 'Nutricãozinho')
+    c.setFont('Semi', 4.8)
+    c.drawString(tx, y + 20.5, 'Comida natural, balanceada e nutritiva,')
+    c.drawString(tx, y + 14, 'feita para as necessidades do seu cãozinho')
+    c.setFont('Bold', 5.4); c.drawString(tx, y + 5.5, NUTRI_TEL + '   •   @nutricaozinhopet')
+    c.setFillColor(ROSA); c.setFont('Ita', 5.2); c.drawCentredString(PW / 2, 9, 'Obrigado por fazer parte da nossa família!')
+    G.pata(c, PW / 2 + 62, 10.6, 4.2, AMARELO, -12)
+
+
+
 MODELOS = [('Modelo1_FotoDoMes', m1), ('Modelo2_LadoALado', m2), ('Modelo3_Polaroid', m3),
            ('Modelo4_Minimalista', m4), ('Modelo5_Ilustrado', m5),
            ('Modelo6_FotoMinimalista', m6), ('Modelo7_AgendaDoPet', m7)]
@@ -563,8 +644,13 @@ MODELOS = [('Modelo1_FotoDoMes', m1), ('Modelo2_LadoALado', m2), ('Modelo3_Polar
 def gerar(func, saida):
     tmp = saida + '.tmp'
     c = canvas.Canvas(tmp, pagesize=(PW, PW))
+    extra = (func is m6 and CAPA_M6)
+    if extra:
+        capa(c); c.showPage()
     for mes in range(12):
         func(c, mes); c.showPage()
+    if extra:
+        contracapa(c); c.showPage()
     c.save()
     r = PdfReader(tmp); w = PdfWriter()
     for pg in r.pages:
