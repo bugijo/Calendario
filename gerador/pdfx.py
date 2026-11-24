@@ -18,7 +18,7 @@ ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
 FONTES = {'Reg': 'Inter-Regular', 'Med': 'Inter-Medium', 'Semi': 'Inter-SemiBold', 'Bold': 'Inter-Bold',
           'XBold': 'Inter-ExtraBold', 'Disp': 'InterDisplay-Bold', 'Black': 'InterDisplay-Black', 'Ita': 'Inter-Italic'}
 _fontes = {}
-QUALIDADE_JPEG = 92
+QUALIDADE_JPEG = 85
 
 
 def _fonte(nome):
